@@ -58,6 +58,8 @@ project.yml               XcodeGen project description
 
 ## Credits
 
+- **VartixTM**: группа, которая делает Silenium
+- **AngelKlear** (con1xx): разработчик
 - [Amethyst-iOS](https://github.com/AngelAuraMC/Amethyst-iOS) and [PojavLauncher](https://github.com/PojavLauncherTeam) for the reference on how an iOS Minecraft launcher works
 - [MC-Heads](https://mc-heads.net) for player heads
 - Mojang for the version manifest
