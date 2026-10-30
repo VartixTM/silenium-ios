@@ -12,7 +12,7 @@ struct VersionListView: View {
     @State private var errorText: String?
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             ZStack {
                 SileniumBackground()
                 VStack(spacing: 12) {
@@ -24,6 +24,7 @@ struct VersionListView: View {
             .task { await load() }
             .refreshable { await load() }
         }
+        .navigationViewStyle(.stack)
     }
 
     private var kindPicker: some View {

@@ -2,7 +2,7 @@ name: Silenium
 options:
   bundleIdPrefix: com.vartix
   deploymentTarget:
-    iOS: "16.0"
+    iOS: "15.0"
 targets:
   Silenium:
     type: application

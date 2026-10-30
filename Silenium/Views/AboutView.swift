@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AboutView: View {
     var body: some View {
-        NavigationStack {
+        NavigationView {
             ZStack {
                 SileniumBackground()
                 ScrollView {
@@ -27,6 +27,7 @@ struct AboutView: View {
             }
             .navigationTitle("О лаунчере")
         }
+        .navigationViewStyle(.stack)
     }
 
     private var header: some View {

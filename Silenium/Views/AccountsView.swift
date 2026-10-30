@@ -11,7 +11,7 @@ struct AccountsView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             ZStack {
                 SileniumBackground()
                 List {
@@ -36,11 +36,11 @@ struct AccountsView: View {
                         .onDelete { store.remove(at: $0) }
                     }
                 }
-                .scrollContentBackground(.hidden)
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: store.accounts)
             }
             .navigationTitle("Аккаунты")
         }
+        .navigationViewStyle(.stack)
     }
 
     private var addRow: some View {

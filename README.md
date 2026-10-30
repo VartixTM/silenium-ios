@@ -19,7 +19,7 @@ Early stage. Right now:
 
 ## Requirements
 
-- iOS 16.0 or later
+- iOS 15.0 or later (tested target: 15.8.8). TrollStore is needed on 15.x for the permanent install.
 - JIT for running the game. TrollStore gives this automatically. Other methods (AltStore, SideStore, StikDebug) also work, but they need a computer or a device connection.
 
 ## Install
