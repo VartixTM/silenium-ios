@@ -5,7 +5,9 @@ struct AccountsView: View {
     @State private var newName = ""
 
     private var nameIsValid: Bool {
-        (3...16).contains(newName.trimmingCharacters(in: .whitespaces).count)
+        let name = newName.trimmingCharacters(in: .whitespaces)
+        return (3...16).contains(name.count)
+            && name.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_") }
     }
 
     var body: some View {
@@ -75,15 +77,27 @@ struct AccountRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            Text(String(account.name.prefix(1)).uppercased())
-                .font(.title3.bold())
-                .foregroundStyle(.black)
-                .frame(width: 44, height: 44)
-                .background(
-                    LinearGradient(colors: [Theme.accent, Theme.accentDeep],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            AsyncImage(url: account.headURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .interpolation(.none)
+                        .resizable()
+                        .scaledToFit()
+                default:
+                    Text(String(account.name.prefix(1)).uppercased())
+                        .font(.title3.bold())
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(
+                            LinearGradient(colors: [Theme.accent, Theme.accentDeep],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing)
+                        )
+                }
+            }
+            .frame(width: 44, height: 44)
+            .background(Theme.accent.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(account.name).font(.headline)
