@@ -66,4 +66,6 @@ project.yml               XcodeGen project description
 
 ## License
 
-TBD. See [LICENSE](LICENSE).
+GNU GPL v3. See [LICENSE](LICENSE).
+
+Silenium uses runtime components from Amethyst-iOS (GPLv3) and OpenJDK builds (GPLv2 with Classpath Exception), so the whole project is distributed under GPLv3.
