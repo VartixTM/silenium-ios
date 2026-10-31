@@ -1,13 +1,13 @@
 import Foundation
 import AuthenticationServices
+import CryptoKit
+import Security
 import UIKit
 
-/// ely.by: вход через браузер (oauth2 authorization code) и legacy логин/пароль (yggdrasil).
+/// ely.by: вход через браузер (oauth2, публичный клиент + PKCE) и legacy логин/пароль (yggdrasil).
 enum ElyBy {
-    // FILL: зарегистрируй своё приложение на account.ely.by и впиши сюда client_id и client_secret.
-    // redirect_uri должен совпадать с тем, что указано в регистрации (silenium://oauth/ely).
-    static let oauthClientID = "FILL_CLIENT_ID"
-    static let oauthClientSecret = "FILL_CLIENT_SECRET"
+    // публичный клиент, секрета нет. redirect_uri должен совпадать с настройками приложения на account.ely.by
+    static let oauthClientID = "silenium"
     static let oauthCallbackScheme = "silenium"
     static let oauthRedirectURI = "silenium://oauth/ely"
 
@@ -16,17 +16,16 @@ enum ElyBy {
         var errorDescription: String? { message }
     }
 
-    // MARK: oauth2 (браузер)
+    // MARK: oauth2 (браузер) + PKCE
 
     @MainActor
     private static var webSession: ASWebAuthenticationSession?
 
     static func oauthLogin() async throws -> (Account, String) {
-        guard oauthClientID != "FILL_CLIENT_ID" else {
-            throw AuthError(message: "не вписан client_id ely.by (Accounts/ElyBy.swift)")
-        }
-
         let state = UUID().uuidString
+        let verifier = makeVerifier()
+        let challenge = self.challenge(for: verifier)
+
         var comps = URLComponents(string: "https://account.ely.by/oauth2/v1")!
         comps.queryItems = [
             URLQueryItem(name: "client_id", value: oauthClientID),
@@ -34,7 +33,9 @@ enum ElyBy {
             URLQueryItem(name: "response_type", value: "code"),
             URLQueryItem(name: "scope", value: "account_info offline_access minecraft_server_session"),
             URLQueryItem(name: "prompt", value: "select_account"),
-            URLQueryItem(name: "state", value: state)
+            URLQueryItem(name: "state", value: state),
+            URLQueryItem(name: "code_challenge", value: challenge),
+            URLQueryItem(name: "code_challenge_method", value: "S256")
         ]
 
         let callback = try await runWebAuth(url: comps.url!)
@@ -48,7 +49,7 @@ enum ElyBy {
             throw AuthError(message: "ответ ely.by не сошёлся (state)")
         }
 
-        let token = try await exchange(code: code)
+        let token = try await exchange(code: code, verifier: verifier)
         let info = try await userInfo(token: token.accessToken)
         guard let uuid = uuid(fromHex: info.uuid) else {
             throw AuthError(message: "ely.by вернул неверный uuid")
@@ -74,6 +75,25 @@ enum ElyBy {
         }
     }
 
+    // PKCE (RFC 7636): verifier 43 символа, challenge = base64url(sha256(verifier))
+
+    static func makeVerifier() -> String {
+        var bytes = [UInt8](repeating: 0, count: 32)
+        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        return base64URL(Data(bytes))
+    }
+
+    static func challenge(for verifier: String) -> String {
+        base64URL(Data(SHA256.hash(data: Data(verifier.utf8))))
+    }
+
+    private static func base64URL(_ data: Data) -> String {
+        data.base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+
     private struct TokenResponse: Decodable {
         let accessToken: String
         let refreshToken: String?
@@ -84,17 +104,17 @@ enum ElyBy {
         let username: String
     }
 
-    private static func exchange(code: String) async throws -> TokenResponse {
+    private static func exchange(code: String, verifier: String) async throws -> TokenResponse {
         var request = URLRequest(url: URL(string: "https://account.ely.by/api/oauth2/v1/token")!)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         var form = URLComponents()
         form.queryItems = [
             URLQueryItem(name: "client_id", value: oauthClientID),
-            URLQueryItem(name: "client_secret", value: oauthClientSecret),
             URLQueryItem(name: "redirect_uri", value: oauthRedirectURI),
             URLQueryItem(name: "grant_type", value: "authorization_code"),
-            URLQueryItem(name: "code", value: code)
+            URLQueryItem(name: "code", value: code),
+            URLQueryItem(name: "code_verifier", value: verifier)
         ]
         request.httpBody = form.percentEncodedQuery?.data(using: .utf8)
 
