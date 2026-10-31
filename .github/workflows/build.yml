@@ -59,7 +59,16 @@ jobs:
           mkdir -p "$APP/java"
           cp -R jre-out/. "$APP/java/"
           brew install ldid
-          ldid -S entitlements.trollstore.xml "$APP/Silenium"
+          BIN="$APP/Silenium"
+          file "$BIN"
+          otool -l "$BIN" | grep -A3 LC_CODE_SIGNATURE || true
+          # linker-signed (ad-hoc от ld) ldid 2.1.5 падает на _assert, снимаем подпись перед переподписью
+          codesign --remove-signature "$BIN" || true
+          if ! ldid -S"entitlements.trollstore.xml" "$BIN"; then
+            echo "ldid failed, fallback to codesign"
+            codesign -f -s - --entitlements entitlements.trollstore.xml "$BIN"
+          fi
+          ldid -e "$BIN" || true
 
       - name: package ipa
         run: |
