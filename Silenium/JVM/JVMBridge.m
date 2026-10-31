@@ -16,6 +16,15 @@ typedef int (*SileniumJLILaunchFunc)(int argc, const char **argv,
                                      unsigned char cpwildcard, unsigned char javaargs,
                                      unsigned char javaw, int ergo);
 
+int (*sileniumJVMReentry)(int argc, char **argv) = NULL;
+static SileniumJLILaunchFunc sileniumLaunch = NULL;
+
+static int sileniumReentry(int argc, char **argv) {
+    return sileniumLaunch(argc, (const char **)argv, 0, NULL, 0, NULL,
+                          "1.8.0-internal", "1.8", "java", "openjdk",
+                          0, 1, 0, 1);
+}
+
 @implementation SileniumJVM
 
 + (int)launchWithJavaHome:(NSString *)javaHome arguments:(NSArray<NSString *> *)arguments {
@@ -74,6 +83,8 @@ typedef int (*SileniumJLILaunchFunc)(int argc, const char **argv,
         }
         printf("[silenium] argv[%d]=%s\n", i, argv[i]);
     }
+    sileniumLaunch = launch;
+    sileniumJVMReentry = sileniumReentry;
     int ret = launch(argc, argv, 0, NULL, 0, NULL,
                      "1.8.0-internal", "1.8", "java", "openjdk",
                      0, 1, 0, 1);

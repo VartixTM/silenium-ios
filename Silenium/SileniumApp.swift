@@ -3,7 +3,8 @@ import UIKit
 
 /// UIKit-хост вместо SwiftUI App: SwiftUI-граф (AppGraph.shared) нельзя пересоздавать,
 /// а JVM на старте трогает окна/сцены. перед запуском игры корень окна снимаем (как Amethyst).
-@main
+// точка входа в main.m (UIApplicationMain с этим именем); @main убран специально
+@objc(SileniumAppDelegate)
 final class AppDelegate: UIResponder, UIApplicationDelegate {
     static weak var shared: AppDelegate?
     var window: UIWindow?
