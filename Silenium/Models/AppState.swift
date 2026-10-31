@@ -41,7 +41,7 @@ final class InstanceStore: ObservableObject {
     }
 
     /// своя папка игры на экземпляр: mods, saves, resourcepacks, datapacks, config
-    static func gameDir(for instance: Instance) -> URL {
+    nonisolated static func gameDir(for instance: Instance) -> URL {
         SileniumPaths.base.appendingPathComponent("instances/\(instance.id.uuidString)", isDirectory: true)
     }
 

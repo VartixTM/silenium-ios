@@ -41,7 +41,7 @@ enum GameLauncher {
                                            render: render)
 
         let thread = Thread {
-            let code = SileniumJVM.launchWithJavaHome(home.path, arguments: args)
+            let code = SileniumJVM.launch(withJavaHome: home.path, arguments: args)
             NSLog("[silenium] JLI_Launch вернул \(code)")
         }
         // minecraft любит глубокий стек, по умолчанию у потока на iOS мало
