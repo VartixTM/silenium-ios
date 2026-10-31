@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// запуск игры: читает json версии, собирает аргументы, поднимает JVM в отдельном потоке.
 enum GameLauncher {
