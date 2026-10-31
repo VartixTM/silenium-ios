@@ -9,7 +9,9 @@ enum ElyBy {
     // публичный клиент, секрета нет. redirect_uri должен совпадать с настройками приложения на account.ely.by
     static let oauthClientID = "silenium"
     static let oauthCallbackScheme = "silenium"
-    static let oauthRedirectURI = "silenium://oauth/ely"
+    static let oauthRedirectURI = "https://vartixtm.github.io/silenium/ely/callback/"
+    /// публичному клиенту секрет не нужен, если ely.by его потребует, впиши сюда
+    static let oauthClientSecret: String? = nil
 
     struct AuthError: LocalizedError {
         let message: String
@@ -116,6 +118,9 @@ enum ElyBy {
             URLQueryItem(name: "code", value: code),
             URLQueryItem(name: "code_verifier", value: verifier)
         ]
+        if let secret = oauthClientSecret {
+            form.queryItems?.append(URLQueryItem(name: "client_secret", value: secret))
+        }
         request.httpBody = form.percentEncodedQuery?.data(using: .utf8)
 
         let (data, response) = try await URLSession.shared.data(for: request)

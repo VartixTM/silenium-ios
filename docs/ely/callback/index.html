@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Silenium: вход ely.by</title>
+</head>
+<body>
+<p>возвращаем в Silenium...</p>
+<p><a id="open" href="#">открыть Silenium</a></p>
+<script>
+  // ely.by шлёт сюда code/state (или error). переадресуем в приложение с теми же параметрами.
+  var target = "silenium://oauth/ely" + location.search + location.hash;
+  document.getElementById("open").href = target;
+  location.replace(target);
+</script>
+</body>
+</html>
