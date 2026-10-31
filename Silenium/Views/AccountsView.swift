@@ -19,6 +19,36 @@ struct AccountsView: View {
         ZStack {
             SileniumBackground()
             List {
+                Section("ely.by") {
+                    Button {
+                        Task { await oauthElyBy() }
+                    } label: {
+                        if elyBusy {
+                            ProgressView()
+                        } else {
+                            Text("войти через ely.by")
+                        }
+                    }
+                    .disabled(elyBusy)
+
+                    DisclosureGroup("legacy: логин и пароль") {
+                        TextField("ник или email", text: $elyUser)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                        SecureField("пароль", text: $elyPass)
+                        Button("войти") {
+                            Task { await legacyElyBy() }
+                        }
+                        .disabled(elyBusy || elyUser.isEmpty || elyPass.isEmpty)
+                    }
+
+                    if let elyError = elyError {
+                        Text(elyError)
+                            .font(.footnote)
+                            .foregroundColor(.red)
+                    }
+                }
+
                 Section("офлайн аккаунт") {
                     HStack {
                         TextField("ник (3-16)", text: $newName)
@@ -28,28 +58,6 @@ struct AccountsView: View {
                         Button("добавить", action: addOffline)
                             .disabled(!nameIsValid)
                     }
-                }
-
-                Section("ely.by") {
-                    TextField("ник или email", text: $elyUser)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                    SecureField("пароль", text: $elyPass)
-                    if let elyError = elyError {
-                        Text(elyError)
-                            .font(.footnote)
-                            .foregroundColor(.red)
-                    }
-                    Button {
-                        Task { await loginElyBy() }
-                    } label: {
-                        if elyBusy {
-                            ProgressView()
-                        } else {
-                            Text("войти")
-                        }
-                    }
-                    .disabled(elyBusy || elyUser.isEmpty || elyPass.isEmpty)
                 }
 
                 Section("аккаунты") {
@@ -72,7 +80,19 @@ struct AccountsView: View {
         newName = ""
     }
 
-    private func loginElyBy() async {
+    private func oauthElyBy() async {
+        elyBusy = true
+        elyError = nil
+        defer { elyBusy = false }
+        do {
+            let (account, token) = try await ElyBy.oauthLogin()
+            store.addElyBy(account, token: token)
+        } catch {
+            elyError = error.localizedDescription
+        }
+    }
+
+    private func legacyElyBy() async {
         elyBusy = true
         elyError = nil
         defer { elyBusy = false }

@@ -132,7 +132,21 @@ final class SettingsStore: ObservableObject {
         didSet { UserDefaults.standard.set(language.rawValue, forKey: languageKey) }
     }
 
+    @Published var render: RenderSettings {
+        didSet {
+            if let data = try? JSONEncoder().encode(render) {
+                UserDefaults.standard.set(data, forKey: "silenium.render")
+            }
+        }
+    }
+
     init() {
+        if let data = UserDefaults.standard.data(forKey: "silenium.render"),
+           let saved = try? JSONDecoder().decode(RenderSettings.self, from: data) {
+            render = saved
+        } else {
+            render = RenderSettings()
+        }
         theme = AppTheme(rawValue: UserDefaults.standard.string(forKey: themeKey) ?? "") ?? .dark
         language = Language(rawValue: UserDefaults.standard.string(forKey: languageKey) ?? "") ?? .ru
     }
