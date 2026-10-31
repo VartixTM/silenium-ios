@@ -17,6 +17,7 @@ enum GameLauncher {
     }
 
     /// запускает игру и возвращается сразу. JVM работает в своём потоке, при выходе процесс завершается.
+    @MainActor
     static func start(instance: Instance,
                       account: Account,
                       accessToken: String?,
@@ -39,6 +40,9 @@ enum GameLauncher {
                                            account: account,
                                            accessToken: accessToken,
                                            render: render)
+
+        // SwiftUI-дерево снимаем до старта JVM, иначе JVM ловит AppGraph.shared may only be set once
+        (UIApplication.shared.delegate as? AppDelegate)?.detachUIForGame()
 
         let thread = Thread {
             let code = SileniumJVM.launch(withJavaHome: home.path, arguments: args)

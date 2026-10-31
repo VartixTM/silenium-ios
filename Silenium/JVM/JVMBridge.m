@@ -67,6 +67,11 @@ typedef int (*SileniumJLILaunchFunc)(int argc, const char **argv,
     NSLog(@"[silenium-jvm] JLI_Launch, argc=%d, java=%@", argc, javaHome);
     printf("[silenium] java=%s\n", javaHome.UTF8String);
     for (int i = 0; i < argc; i++) {
+        // токен в лог не пишем
+        if (i > 0 && strcmp(argv[i - 1], "--accessToken") == 0) {
+            printf("[silenium] argv[%d]=<redacted>\n", i);
+            continue;
+        }
         printf("[silenium] argv[%d]=%s\n", i, argv[i]);
     }
     int ret = launch(argc, argv, 0, NULL, 0, NULL,
