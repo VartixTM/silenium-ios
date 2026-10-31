@@ -1,14 +1,12 @@
 import SwiftUI
 
-/// список версий (релизы / снапшоты). используется в скачивании, выбор — через onPick.
+/// список версий (релизы / снапшоты). строка ведёт на выбор загрузчика (push, с кнопкой «назад»).
 struct VersionBrowser: View {
     enum Kind: String, CaseIterable, Identifiable {
         case release = "Релизы"
         case snapshot = "Снапшоты"
         var id: String { rawValue }
     }
-
-    let onPick: (VersionManifest.Entry) -> Void
 
     @State private var kind: Kind = .release
     @State private var manifest: VersionManifest?
@@ -18,7 +16,7 @@ struct VersionBrowser: View {
         ZStack {
             SileniumBackground()
             VStack(spacing: 12) {
-                Picker("Тип", selection: $kind.animation(.spring(response: 0.35, dampingFraction: 0.8))) {
+                Picker("Тип", selection: $kind) {
                     ForEach(Kind.allCases) { Text($0.rawValue).tag($0) }
                 }
                 .pickerStyle(.segmented)
@@ -39,18 +37,16 @@ struct VersionBrowser: View {
             ScrollView {
                 LazyVStack(spacing: 10) {
                     ForEach(list) { entry in
-                        Button { onPick(entry) } label: {
+                        NavigationLink(destination: LoaderSheet(entry: entry)) {
                             VersionRow(entry: entry, isLatest: entry.id == latestID)
                         }
-                        .buttonStyle(PressScale())
-                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 24)
-                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: kind)
             }
-        } else if let errorText {
+        } else if let errorText = errorText {
             VStack(spacing: 10) {
                 Spacer()
                 Image(systemName: "wifi.exclamationmark")
@@ -82,13 +78,9 @@ struct VersionBrowser: View {
 
     private func load() async {
         do {
-            let fresh = try await MojangAPI.fetchManifest()
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                manifest = fresh
-            }
+            manifest = try await MojangAPI.fetchManifest()
             errorText = nil
         } catch is CancellationError {
-            // view пересоздалась (таб/шит), это не ошибка
             return
         } catch let e as URLError where e.code == .cancelled {
             return
@@ -109,7 +101,6 @@ struct VersionRow: View {
             Image(systemName: isRelease ? "cube.fill" : "hammer.fill")
                 .foregroundStyle(isRelease ? Theme.accent : Theme.accentDeep)
                 .frame(width: 38, height: 38)
-                .background(Circle().fill(Color.white.opacity(0.06)))
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.id).font(.headline)
                 Text(entry.type)
@@ -125,7 +116,7 @@ struct VersionRow: View {
                     .background(Capsule().fill(Theme.accent.opacity(0.2)))
                     .foregroundStyle(Theme.accent)
             }
-            Image(systemName: "arrow.down.circle")
+            Image(systemName: "chevron.right")
                 .foregroundStyle(.secondary)
         }
         .glassCard()

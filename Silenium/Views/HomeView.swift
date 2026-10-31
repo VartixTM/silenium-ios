@@ -6,15 +6,7 @@ struct HomeView: View {
 
     @State private var news: [NewsItem] = []
     @State private var newsError: String?
-    @State private var sheet: HomeSheet?
     @State private var showLaunchInfo = false
-
-    enum HomeSheet: String, Identifiable {
-        case accounts, instances, download, settings, files
-        var id: String { rawValue }
-    }
-
-    private let purple = Color(red: 0.37, green: 0.33, blue: 0.56)
 
     var body: some View {
         GeometryReader { geo in
@@ -31,8 +23,8 @@ struct HomeView: View {
                 .padding(20)
             }
         }
+        .navigationBarHidden(true)
         .task { await loadNews() }
-        .sheet(item: $sheet) { s in sheetContent(s) }
         .alert("запуск пока недоступен", isPresented: $showLaunchInfo) {
             Button("ок", role: .cancel) {}
         } message: {
@@ -40,7 +32,7 @@ struct HomeView: View {
         }
     }
 
-    // MARK: top bar
+    // MARK: верхняя панель
 
     private var topBar: some View {
         HStack(spacing: 4) {
@@ -51,24 +43,21 @@ struct HomeView: View {
                                    startPoint: .leading, endPoint: .trailing)
                 )
             Spacer()
-            iconButton("folder.fill") { sheet = .files }
-            iconButton("person.2.fill") { sheet = .accounts }
-            iconButton("arrow.down.circle.fill") { sheet = .download }
-            iconButton("gearshape.fill") { sheet = .settings }
+            NavigationLink(destination: FilesPlaceholderView()) { topIcon("folder.fill") }
+            NavigationLink(destination: AccountsView()) { topIcon("person.2.fill") }
+            NavigationLink(destination: DownloadView()) { topIcon("arrow.down.circle.fill") }
+            NavigationLink(destination: SettingsView()) { topIcon("gearshape.fill") }
         }
     }
 
-    private func iconButton(_ name: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: name)
-                .font(.title2)
-                .frame(width: 44, height: 44)
-        }
-        .buttonStyle(PressScale())
-        .foregroundStyle(.primary)
+    private func topIcon(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.title2)
+            .frame(width: 44, height: 44)
+            .foregroundColor(.primary)
     }
 
-    // MARK: news
+    // MARK: новости
 
     private var newsColumn: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -85,125 +74,96 @@ struct HomeView: View {
                     HStack(alignment: .top, spacing: 12) {
                         ForEach(news) { item in
                             NewsCard(item: item)
-                                .transition(.opacity.combined(with: .move(edge: .leading)))
                         }
                     }
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .animation(.spring(response: 0.45, dampingFraction: 0.85), value: news.count)
     }
 
-    // MARK: side panel (аккаунт, экземпляр, запуск)
+    // MARK: правая панель
 
     private var sidePanel: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("версия")
                 .font(.caption.bold())
                 .foregroundStyle(.secondary)
-            accountCard
-            instanceCard
+            NavigationLink(destination: AccountsView()) { accountCard }
+            NavigationLink(destination: InstancesView()) { instanceCard }
             Spacer(minLength: 0)
             launchButton
         }
     }
 
     private var accountCard: some View {
-        Button { sheet = .accounts } label: {
-            HStack(spacing: 12) {
-                if let acc = accounts.selected {
-                    AsyncImage(url: acc.headURL) { image in
-                        image.interpolation(.none).resizable().scaledToFit()
-                    } placeholder: {
-                        Color.clear
-                    }
+        HStack(spacing: 12) {
+            if let acc = accounts.selected {
+                AccountHead(account: acc)
                     .frame(width: 48, height: 48)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(acc.name).font(.headline)
-                        Text(acc.kind.rawValue).font(.caption).foregroundStyle(.secondary)
-                    }
-                } else {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title)
-                        .foregroundStyle(Theme.accent)
-                    Text("добавить аккаунт").font(.headline)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(acc.name).font(.headline)
+                    Text(acc.kind.rawValue).font(.caption).foregroundStyle(.secondary)
                 }
-                Spacer()
+            } else {
+                Image(systemName: "plus.circle.fill")
+                    .font(.title)
+                    .foregroundStyle(Theme.accent)
+                Text("добавить аккаунт").font(.headline)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .glassCard()
+            Spacer()
         }
-        .buttonStyle(PressScale())
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassCard()
     }
 
     private var instanceCard: some View {
-        Button { sheet = .instances } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "cube.fill")
-                    .font(.title2)
-                    .foregroundStyle(Theme.accent)
-                    .frame(width: 48, height: 48)
-                VStack(alignment: .leading, spacing: 2) {
-                    if let inst = instances.selected {
-                        Text(inst.name).font(.headline)
-                        Text("\(inst.loader.rawValue) · изолированная папка")
-                            .font(.caption).foregroundStyle(.secondary)
-                    } else {
-                        Text("нет экземпляра").font(.headline)
-                        Text("нажми, чтобы выбрать или создать")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
+        HStack(spacing: 12) {
+            Image(systemName: "cube.fill")
+                .font(.title2)
+                .foregroundStyle(Theme.accent)
+                .frame(width: 48, height: 48)
+            VStack(alignment: .leading, spacing: 2) {
+                if let inst = instances.selected {
+                    Text(inst.name).font(.headline)
+                    Text(inst.loader.rawValue).font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Text("нет экземпляра").font(.headline)
+                    Text("выбрать или создать").font(.caption).foregroundStyle(.secondary)
                 }
-                Spacer()
-                Image(systemName: "chevron.right").foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .glassCard(selected: instances.selected != nil)
-            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: instances.selectedID)
+            Spacer()
+            Image(systemName: "chevron.right").foregroundStyle(.secondary)
         }
-        .buttonStyle(PressScale())
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassCard(selected: instances.selected != nil)
     }
-
-    private var launchButton: some View {
-        Button {
-            if instances.selected == nil {
-                sheet = .download
-            } else {
-                showLaunchInfo = true
-            }
-        } label: {
-            Text(instances.selected == nil ? "создать экземпляр" : "запустить")
-                .font(.title3.bold())
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous).fill(purple)
-                )
-        }
-        .buttonStyle(PressScale())
-    }
-
-    // MARK: sheets
 
     @ViewBuilder
-    private func sheetContent(_ s: HomeSheet) -> some View {
-        switch s {
-        case .accounts:
-            NavigationView { AccountsView() }.navigationViewStyle(.stack)
-        case .instances:
-            NavigationView { InstancesView() }.navigationViewStyle(.stack)
-        case .download:
-            NavigationView { DownloadView() }.navigationViewStyle(.stack)
-        case .settings:
-            NavigationView { SettingsView() }.navigationViewStyle(.stack)
-        case .files:
-            NavigationView { FilesPlaceholderView() }.navigationViewStyle(.stack)
+    private var launchButton: some View {
+        if instances.selected == nil {
+            NavigationLink(destination: DownloadView()) {
+                launchLabel("создать экземпляр")
+            }
+        } else {
+            Button { showLaunchInfo = true } label: {
+                launchLabel("запустить")
+            }
         }
     }
 
-    // MARK: data
+    private func launchLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.title3.bold())
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Theme.purple)
+            )
+    }
+
+    // MARK: данные
 
     private func loadNews() async {
         guard news.isEmpty else { return }
@@ -229,7 +189,7 @@ private struct NewsCard: View {
                 AsyncImage(url: item.imageURL) { image in
                     image.resizable().scaledToFill()
                 } placeholder: {
-                    Color.white.opacity(0.05)
+                    Color.gray.opacity(0.15)
                 }
                 .frame(width: 220, height: 110)
                 .clipped()

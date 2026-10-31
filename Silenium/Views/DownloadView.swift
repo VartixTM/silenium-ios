@@ -1,16 +1,10 @@
 import SwiftUI
 
-/// скачивание: выбор версии -> выбор загрузчика -> создание экземпляра
+/// скачивание: список версий -> (push) выбор загрузчика -> создание экземпляра
 struct DownloadView: View {
-    @State private var picked: VersionManifest.Entry?
-
     var body: some View {
-        VersionBrowser(onPick: { picked = $0 })
+        VersionBrowser()
             .navigationTitle("скачать")
-            .sheet(item: $picked) { entry in
-                NavigationView { LoaderSheet(entry: entry) }
-                    .navigationViewStyle(.stack)
-            }
     }
 }
 
@@ -30,22 +24,20 @@ struct LoaderSheet: View {
         ZStack {
             SileniumBackground()
             VStack(alignment: .leading, spacing: 14) {
-                Text(entry.id).font(.title2.bold())
                 Text("выбери загрузчик")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
                 ForEach(Instance.Loader.allCases) { l in
-                    Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { loader = l } } label: {
+                    Button { loader = l } label: {
                         loaderRow(l)
                     }
-                    .buttonStyle(PressScale())
+                    .buttonStyle(.plain)
                 }
 
                 if loader == .fabric {
                     Toggle("скачать Fabric API", isOn: $fabricAPI)
                         .glassCard()
-                        .transition(.opacity)
                 }
 
                 if loader != .vanilla {
@@ -63,10 +55,10 @@ struct LoaderSheet: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
-                if let errorText {
+                if let errorText = errorText {
                     Text(errorText)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundColor(.red)
                 }
 
                 Button {
@@ -77,20 +69,16 @@ struct LoaderSheet: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.accentDeep))
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.accentDeep)
+                        )
                 }
-                .buttonStyle(PressScale())
+                .buttonStyle(.plain)
                 .disabled(busy)
             }
             .padding()
         }
-        .navigationTitle("загрузчик")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("закрыть") { presentation.wrappedValue.dismiss() }
-            }
-        }
+        .navigationTitle(entry.id)
     }
 
     private func loaderRow(_ l: Instance.Loader) -> some View {

@@ -19,7 +19,7 @@ struct InstancesView: View {
                         Button { instances.select(inst.id) } label: {
                             InstanceRow(inst: inst, selected: inst.id == instances.selectedID)
                         }
-                        .buttonStyle(PressScale())
+                        .buttonStyle(.plain)
                         .contextMenu {
                             Button(role: .destructive) { instances.remove(inst) } label: {
                                 Label("удалить", systemImage: "trash")
@@ -29,13 +29,12 @@ struct InstancesView: View {
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 24)
-                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: instances.instances)
             }
         }
         .navigationTitle("Экземпляры")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink("создать") { DownloadView() }
+                NavigationLink("создать", destination: DownloadView())
             }
         }
     }
@@ -50,7 +49,6 @@ private struct InstanceRow: View {
             Image(systemName: "cube.fill")
                 .foregroundStyle(Theme.accent)
                 .frame(width: 38, height: 38)
-                .background(Circle().fill(Color.white.opacity(0.06)))
             VStack(alignment: .leading, spacing: 2) {
                 Text(inst.name).font(.headline)
                 Text("\(inst.loader.rawValue) · моды и миры только здесь")

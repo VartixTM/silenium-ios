@@ -10,12 +10,6 @@ struct Account: Codable, Identifiable, Hashable {
     let id: UUID
     let name: String
     let kind: Kind
-    var accessToken: String = "0"
-
-    /// 2d голова скина по нику (mc-heads.net); для offline — дефолтный скин, если ника нет в mojang
-    var headURL: URL? {
-        URL(string: "https://mc-heads.net/head/\(name)/120")
-    }
 }
 
 enum OfflineAccount {
