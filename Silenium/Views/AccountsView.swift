@@ -11,36 +11,33 @@ struct AccountsView: View {
     }
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                SileniumBackground()
-                List {
-                    Section {
-                        addRow
+        ZStack {
+            SileniumBackground()
+            List {
+                Section {
+                    addRow
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+
+                Section("аккаунты") {
+                    ForEach(store.accounts) { acc in
+                        AccountRow(account: acc, selected: acc.id == store.selectedID)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                                    store.select(acc.id)
+                                }
+                            }
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                     }
-
-                    Section("аккаунты") {
-                        ForEach(store.accounts) { acc in
-                            AccountRow(account: acc, selected: acc.id == store.selectedID)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                                        store.select(acc.id)
-                                    }
-                                }
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
-                        }
-                        .onDelete { store.remove(at: $0) }
-                    }
+                    .onDelete { store.remove(at: $0) }
                 }
-                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: store.accounts)
             }
-            .navigationTitle("Аккаунты")
+            .animation(.spring(response: 0.4, dampingFraction: 0.85), value: store.accounts)
         }
-        .navigationViewStyle(.stack)
+        .navigationTitle("Аккаунты")
     }
 
     private var addRow: some View {
@@ -77,23 +74,17 @@ struct AccountRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            AsyncImage(url: account.headURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .interpolation(.none)
-                        .resizable()
-                        .scaledToFit()
-                default:
-                    Text(String(account.name.prefix(1)).uppercased())
-                        .font(.title3.bold())
-                        .foregroundStyle(.black)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(
-                            LinearGradient(colors: [Theme.accent, Theme.accentDeep],
-                                           startPoint: .topLeading, endPoint: .bottomTrailing)
-                        )
-                }
+            AsyncImage(url: account.headURL) { image in
+                image.interpolation(.none).resizable().scaledToFit()
+            } placeholder: {
+                Text(String(account.name.prefix(1)).uppercased())
+                    .font(.title3.bold())
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(
+                        LinearGradient(colors: [Theme.accent, Theme.accentDeep],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
             }
             .frame(width: 44, height: 44)
             .background(Theme.accent.opacity(0.12))

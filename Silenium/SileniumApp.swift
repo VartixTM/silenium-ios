@@ -4,10 +4,11 @@ import UIKit
 @main
 struct SileniumApp: App {
     @StateObject private var accounts = AccountStore()
+    @StateObject private var instances = InstanceStore()
+    @StateObject private var settings = SettingsStore()
 
     init() {
-        // iOS 15: scrollContentBackground недоступен, List на UITableView — красим через appearance,
-        // чтобы фон-пятна были видны за списками
+        // iOS 15: List на UITableView, красим фон через appearance, чтобы пятна были видны
         UITableView.appearance().backgroundColor = .clear
         UITableViewCell.appearance().backgroundColor = .clear
     }
@@ -16,6 +17,9 @@ struct SileniumApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(accounts)
+                .environmentObject(instances)
+                .environmentObject(settings)
+                .preferredColorScheme(settings.theme.scheme)
         }
     }
 }

@@ -1,38 +1,34 @@
 import SwiftUI
 
-struct VersionListView: View {
+/// список версий (релизы / снапшоты). используется в скачивании, выбор — через onPick.
+struct VersionBrowser: View {
     enum Kind: String, CaseIterable, Identifiable {
         case release = "Релизы"
         case snapshot = "Снапшоты"
         var id: String { rawValue }
     }
 
+    let onPick: (VersionManifest.Entry) -> Void
+
     @State private var kind: Kind = .release
     @State private var manifest: VersionManifest?
     @State private var errorText: String?
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                SileniumBackground()
-                VStack(spacing: 12) {
-                    kindPicker
-                    content
+        ZStack {
+            SileniumBackground()
+            VStack(spacing: 12) {
+                Picker("Тип", selection: $kind.animation(.spring(response: 0.35, dampingFraction: 0.8))) {
+                    ForEach(Kind.allCases) { Text($0.rawValue).tag($0) }
                 }
-            }
-            .navigationTitle("Версии")
-            .task { await load() }
-            .refreshable { await load() }
-        }
-        .navigationViewStyle(.stack)
-    }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
 
-    private var kindPicker: some View {
-        Picker("Тип", selection: $kind.animation(.spring(response: 0.35, dampingFraction: 0.8))) {
-            ForEach(Kind.allCases) { Text($0.rawValue).tag($0) }
+                content
+            }
         }
-        .pickerStyle(.segmented)
-        .padding(.horizontal)
+        .task { await load() }
+        .refreshable { await load() }
     }
 
     @ViewBuilder
@@ -43,8 +39,11 @@ struct VersionListView: View {
             ScrollView {
                 LazyVStack(spacing: 10) {
                     ForEach(list) { entry in
-                        VersionRow(entry: entry, isLatest: entry.id == latestID)
-                            .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                        Button { onPick(entry) } label: {
+                            VersionRow(entry: entry, isLatest: entry.id == latestID)
+                        }
+                        .buttonStyle(PressScale())
+                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
                     }
                 }
                 .padding(.horizontal)
@@ -88,6 +87,11 @@ struct VersionListView: View {
                 manifest = fresh
             }
             errorText = nil
+        } catch is CancellationError {
+            // view пересоздалась (таб/шит), это не ошибка
+            return
+        } catch let e as URLError where e.code == .cancelled {
+            return
         } catch {
             errorText = error.localizedDescription
         }
@@ -121,6 +125,8 @@ struct VersionRow: View {
                     .background(Capsule().fill(Theme.accent.opacity(0.2)))
                     .foregroundStyle(Theme.accent)
             }
+            Image(systemName: "arrow.down.circle")
+                .foregroundStyle(.secondary)
         }
         .glassCard()
     }
