@@ -9,7 +9,7 @@ enum ElyBy {
     // публичный клиент, секрета нет. redirect_uri должен совпадать с настройками приложения на account.ely.by
     static let oauthClientID = "silenium"
     static let oauthCallbackScheme = "silenium"
-    static let oauthRedirectURI = "https://vartixtm.github.io/silenium/ely/callback/"
+    static let oauthRedirectURI = "https://vartixtm.github.io/silenium-ios/ely/callback/"
     /// публичному клиенту секрет не нужен, если ely.by его потребует, впиши сюда
     static let oauthClientSecret: String? = nil
 
