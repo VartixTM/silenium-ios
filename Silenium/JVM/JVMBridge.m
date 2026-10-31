@@ -2,8 +2,10 @@
 
 #import <dlfcn.h>
 #import <signal.h>
+#import <stdio.h>
 #import <stdlib.h>
 #import <string.h>
+#import <unistd.h>
 
 // сигнатура JLI_Launch, как в openjdk launcher (та же, что использует Amethyst)
 typedef int (*SileniumJLILaunchFunc)(int argc, const char **argv,
@@ -23,6 +25,14 @@ typedef int (*SileniumJLILaunchFunc)(int argc, const char **argv,
     NSString *jli = [fm fileExistsAtPath:jli8] ? jli8 : jli11;
 
     setenv("JAVA_HOME", javaHome.UTF8String, 1);
+
+    // stdout/stderr JVM и ошибки лаунчера пишем в Documents/silenium-jvm.log
+    // (видно в Files → Silenium на устройстве)
+    NSString *docs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
+    NSString *logPath = [docs stringByAppendingPathComponent:@"silenium-jvm.log"];
+    freopen(logPath.UTF8String, "w", stdout);
+    dup2(fileno(stdout), fileno(stderr));
+    setvbuf(stdout, NULL, _IONBF, 0);
 
     void *lib = dlopen(jli.UTF8String, RTLD_GLOBAL);
     if (lib == NULL) {
@@ -55,6 +65,10 @@ typedef int (*SileniumJLILaunchFunc)(int argc, const char **argv,
     }
 
     NSLog(@"[silenium-jvm] JLI_Launch, argc=%d, java=%@", argc, javaHome);
+    printf("[silenium] java=%s\n", javaHome.UTF8String);
+    for (int i = 0; i < argc; i++) {
+        printf("[silenium] argv[%d]=%s\n", i, argv[i]);
+    }
     int ret = launch(argc, argv, 0, NULL, 0, NULL,
                      "1.8.0-internal", "1.8", "java", "openjdk",
                      0, 1, 0, 1);
