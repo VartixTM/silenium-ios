@@ -20,6 +20,8 @@ targets:
         CODE_SIGN_IDENTITY: ""
         SWIFT_VERSION: "5.9"
         SWIFT_OBJC_BRIDGING_HEADER: Silenium/Bridging-Header.h
+        # jli ищет main через dlsym(RTLD_DEFAULT, "main"), без экспорта символа падает "could not find executable"
+        OTHER_LDFLAGS: "-Wl,-export_dynamic"
         TARGETED_DEVICE_FAMILY: "1,2"
     info:
       path: Silenium/Info.plist
