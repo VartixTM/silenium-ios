@@ -28,11 +28,11 @@ struct VersionMeta: Decodable {
         let downloads: Downloads?
         let rules: [Rule]?
 
-        /// ios не osx, поэтому правила с os=osx пропускаем, без os — применяем
+        /// эмулируем mac: правила без os и с os=osx применяем, linux/windows — нет
         var isAllowed: Bool {
             guard let rules else { return true }
             var allowed = false
-            for rule in rules where rule.os == nil {
+            for rule in rules where rule.os == nil || rule.os?.name == "osx" {
                 allowed = rule.action == "allow"
             }
             return allowed
@@ -54,6 +54,11 @@ struct VersionMeta: Decodable {
     let downloads: Downloads
     let assetIndex: AssetIndexRef
     let libraries: [Library]
+    let javaVersion: JavaVersion?
+}
+
+struct JavaVersion: Decodable {
+    let majorVersion: Int
 }
 
 struct AssetIndex: Decodable {

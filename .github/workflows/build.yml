@@ -42,6 +42,25 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             build
 
+      - name: download java runtimes (amethyst host)
+        run: |
+          mkdir -p jre-work jre-out
+          for v in 8 17 21; do
+            curl -fSL -o "jre-work/jre$v.zip" "https://assets.angelauramc.dev/openjdk/ios-arm64/jre$v-ios-aarch64.zip"
+            (cd jre-work && unzip -q "jre$v.zip" && rm "jre$v.zip")
+            mkdir -p "jre-out/$v"
+            tar -xJf jre-work/jre$v-*.tar.xz -C "jre-out/$v"
+          done
+
+      - name: put runtimes into app and sign for trollstore
+        run: |
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "Silenium.app" | head -n 1)
+          test -n "$APP"
+          mkdir -p "$APP/java"
+          cp -R jre-out/. "$APP/java/"
+          brew install ldid
+          ldid -S entitlements.trollstore.xml "$APP/Silenium"
+
       - name: package ipa
         run: |
           APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "Silenium.app" | head -n 1)

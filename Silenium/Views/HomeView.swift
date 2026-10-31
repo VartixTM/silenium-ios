@@ -3,10 +3,12 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject private var accounts: AccountStore
     @EnvironmentObject private var instances: InstanceStore
+    @EnvironmentObject private var settings: SettingsStore
 
     @State private var news: [NewsItem] = []
     @State private var newsError: String?
     @State private var showLaunchInfo = false
+    @State private var launchMessage = ""
 
     var body: some View {
         GeometryReader { geo in
@@ -25,10 +27,10 @@ struct HomeView: View {
         }
         .navigationBarHidden(true)
         .task { await loadNews() }
-        .alert("запуск пока недоступен", isPresented: $showLaunchInfo) {
+        .alert("запуск", isPresented: $showLaunchInfo) {
             Button("ок", role: .cancel) {}
         } message: {
-            Text("нужна JVM, её встраиваем следующим этапом. пока ставим версии и создаём экземпляры.")
+            Text(launchMessage)
         }
     }
 
@@ -146,7 +148,7 @@ struct HomeView: View {
                 launchLabel("создать экземпляр")
             }
         } else {
-            Button { showLaunchInfo = true } label: {
+            Button { launch() } label: {
                 launchLabel("запустить")
             }
         }
@@ -161,6 +163,27 @@ struct HomeView: View {
             .background(
                 RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Theme.purple)
             )
+    }
+
+    // MARK: запуск
+
+    private func launch() {
+        guard let inst = instances.selected else { return }
+        guard let account = accounts.selected else {
+            launchMessage = "сначала выбери аккаунт"
+            showLaunchInfo = true
+            return
+        }
+        do {
+            try GameLauncher.start(instance: inst,
+                                   account: account,
+                                   accessToken: accounts.token(for: account),
+                                   render: settings.render)
+            launchMessage = "JVM запущена, лог смотри в консоли устройства."
+        } catch {
+            launchMessage = error.localizedDescription
+        }
+        showLaunchInfo = true
     }
 
     // MARK: данные
