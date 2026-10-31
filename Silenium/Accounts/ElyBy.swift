@@ -7,7 +7,7 @@ import UIKit
 /// ely.by: вход через браузер (oauth2, публичный клиент + PKCE) и legacy логин/пароль (yggdrasil).
 enum ElyBy {
     // публичный клиент, секрета нет. redirect_uri должен совпадать с настройками приложения на account.ely.by
-    static let oauthClientID = "silenium"
+    static let oauthClientID = "silenium1"
     static let oauthCallbackScheme = "silenium"
     static let oauthRedirectURI = "https://vartixtm.github.io/silenium-ios/ely/callback/"
     /// публичному клиенту секрет не нужен, если ely.by его потребует, впиши сюда
