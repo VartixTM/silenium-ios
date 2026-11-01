@@ -8,9 +8,22 @@ enum LaunchCommand {
                           accessToken: String?,
                           render: RenderSettings) -> [String] {
         var args: [String] = []
+        let gameDir = InstanceStore.gameDir(for: instance).path
 
-        args.append("-Xmx\(render.ramMB)M")
-        args.append("-Djava.library.path=\(SileniumPaths.base.appendingPathComponent("natives").path)")
+        // как в Amethyst/PojavLauncher iOS: -XstartOnFirstThread заставляет jli не плодить поток
+        // (тот самый apple_main, который вызывал main() и падал на dlsym/UIApplication)
+        args.append("-XstartOnFirstThread")
+        args += [
+            "-Xms128M",
+            "-Xmx\(render.ramMB)M",
+            "-Djava.library.path=\(SileniumPaths.base.appendingPathComponent("natives").path)",
+            "-Duser.dir=\(gameDir)",
+            "-Duser.home=\(SileniumPaths.base.path)",
+            "-Dorg.lwjgl.glfw.checkThread0=false",
+            "-Dorg.lwjgl.system.allocator=system",
+            "-Dlog4j2.formatMsgNoLookups=true",
+            "-XX:+DisablePrimordialThreadGuardPages",
+        ]
         args += render.jvmArgs
             .split(separator: " ")
             .map(String.init)
@@ -22,7 +35,7 @@ enum LaunchCommand {
         args += [
             "--username", account.name,
             "--version", meta.id,
-            "--gameDir", InstanceStore.gameDir(for: instance).path,
+            "--gameDir", gameDir,
             "--assetsDir", SileniumPaths.assets.path,
             "--assetIndex", meta.assetIndex.id,
             "--uuid", account.id.uuidString.replacingOccurrences(of: "-", with: "").lowercased(),
