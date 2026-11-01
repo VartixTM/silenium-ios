@@ -22,6 +22,7 @@ enum LaunchCommand {
             "-Dorg.lwjgl.glfw.checkThread0=false",
             "-Dorg.lwjgl.system.allocator=system",
             "-Dlog4j2.formatMsgNoLookups=true",
+            "-XX:+UnlockExperimentalVMOptions",
             "-XX:+DisablePrimordialThreadGuardPages",
         ]
         args += render.jvmArgs
