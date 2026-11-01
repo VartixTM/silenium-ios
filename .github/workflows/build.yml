@@ -62,7 +62,10 @@ jobs:
           BIN="$APP/Silenium"
           file "$BIN"
           # диагностика: экспортируется ли main (jli делает dlsym(RTLD_DEFAULT, "main"))
-          nm -gU "$BIN" | grep -w main || echo "NO EXPORTED main"
+          # grep -w не матчит _main (подчёркивание считается буквой), поэтому смотрим весь вывод
+          echo "exported symbols total: $(nm -gU "$BIN" | wc -l)"
+          nm -gU "$BIN" | grep -i "main" || echo "NO EXPORTED main"
+          nm -u "$BIN" | grep -i "dlsym" || true
           otool -l "$BIN" | grep -A3 LC_CODE_SIGNATURE || true
           # linker-signed (ad-hoc от ld) ldid 2.1.5 падает на _assert, снимаем подпись перед переподписью
           codesign --remove-signature "$BIN" || true
