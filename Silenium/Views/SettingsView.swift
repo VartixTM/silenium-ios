@@ -1,4 +1,5 @@
 import SwiftUI
+import Security
 
 struct SettingsView: View {
     @EnvironmentObject private var settings: SettingsStore
@@ -66,6 +67,15 @@ struct SettingsView: View {
                             .autocorrectionDisabled()
                     }
 
+                    section("данные") {
+                        // удаление приложения не чистит Application Support и UserDefaults, поэтому сбрасываем сами
+                        Button(role: .destructive) {
+                            resetAllData()
+                        } label: {
+                            Text("сбросить все данные и закрыть")
+                        }
+                    }
+
                     section("авторы") {
                         AuthorsSection()
                     }
@@ -80,6 +90,21 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Настройки")
+    }
+
+    /// удаляет версии, экземпляры, аккаунты (UserDefaults), токены ely.by (Keychain) и закрывает приложение.
+    /// после запуска всё чистое.
+    private func resetAllData() {
+        try? FileManager.default.removeItem(at: SileniumPaths.base)
+        if let id = Bundle.main.bundleIdentifier {
+            UserDefaults.standard.removePersistentDomain(forName: id)
+        }
+        let keychainQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: "com.vartix.silenium"
+        ]
+        SecItemDelete(keychainQuery as CFDictionary)
+        exit(0)
     }
 
     private func sliderBinding(_ keyPath: WritableKeyPath<RenderSettings, Int>) -> Binding<Double> {

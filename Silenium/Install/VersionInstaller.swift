@@ -103,15 +103,27 @@ enum SileniumPaths {
 // MARK: - natives
 
 enum NativesExtractor {
-    /// распаковывает natives-jar в папку версии, META-INF не нужен
+    /// распаковывает natives-jar в папку версии. у каждого jar свой META-INF/MANIFEST.MF,
+    /// поэтому каждый распаковываем во временную папку и переносим только библиотеки (с заменой).
     static func extract(jars: [URL], to dir: URL) throws {
         let fm = FileManager.default
         try? fm.removeItem(at: dir)
         try fm.createDirectory(at: dir, withIntermediateDirectories: true)
-        for jar in jars {
-            try fm.unzipItem(at: jar, to: dir)
+        for (index, jar) in jars.enumerated() {
+            let tmp = dir.deletingLastPathComponent()
+                .appendingPathComponent("natives-tmp-\(index)", isDirectory: true)
+            try? fm.removeItem(at: tmp)
+            try fm.unzipItem(at: jar, to: tmp)
+            let items = try fm.contentsOfDirectory(at: tmp, includingPropertiesForKeys: nil)
+            for item in items where item.lastPathComponent != "META-INF" {
+                let target = dir.appendingPathComponent(item.lastPathComponent)
+                if fm.fileExists(atPath: target.path) {
+                    try fm.removeItem(at: target)
+                }
+                try fm.moveItem(at: item, to: target)
+            }
+            try? fm.removeItem(at: tmp)
         }
-        try? fm.removeItem(at: dir.appendingPathComponent("META-INF", isDirectory: true))
     }
 }
 
