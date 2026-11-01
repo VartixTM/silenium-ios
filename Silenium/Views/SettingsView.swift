@@ -95,7 +95,12 @@ struct SettingsView: View {
     /// удаляет версии, экземпляры, аккаунты (UserDefaults), токены ely.by (Keychain) и закрывает приложение.
     /// после запуска всё чистое.
     private func resetAllData() {
-        try? FileManager.default.removeItem(at: SileniumPaths.base)
+        // Documents оставляем, удаляем только содержимое приложения (лог jvm тоже уходит)
+        let fm = FileManager.default
+        let items = (try? fm.contentsOfDirectory(at: SileniumPaths.base, includingPropertiesForKeys: nil)) ?? []
+        for item in items {
+            try? fm.removeItem(at: item)
+        }
         if let id = Bundle.main.bundleIdentifier {
             UserDefaults.standard.removePersistentDomain(forName: id)
         }

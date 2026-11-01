@@ -29,8 +29,7 @@ final class InstanceStore: ObservableObject {
     private let selectedKey = "silenium.selectedInstance"
 
     init() {
-        if let data = UserDefaults.standard.data(forKey: listKey),
-           let list = try? JSONDecoder().decode([Instance].self, from: data) {
+        if let list = JSONStorage.load([Instance].self, from: SileniumPaths.instancesFile) {
             instances = list
         }
         selectedID = UserDefaults.standard.string(forKey: selectedKey).flatMap(UUID.init(uuidString:))
@@ -82,9 +81,7 @@ final class InstanceStore: ObservableObject {
     }
 
     private func save() {
-        if let data = try? JSONEncoder().encode(instances) {
-            UserDefaults.standard.set(data, forKey: listKey)
-        }
+        JSONStorage.save(instances, to: SileniumPaths.instancesFile)
     }
 }
 

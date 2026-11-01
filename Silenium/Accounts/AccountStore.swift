@@ -9,8 +9,7 @@ final class AccountStore: ObservableObject {
     private let selectedKey = "silenium.selected"
 
     init() {
-        if let data = UserDefaults.standard.data(forKey: listKey),
-           let list = try? JSONDecoder().decode([Account].self, from: data) {
+        if let list = JSONStorage.load([Account].self, from: SileniumPaths.accountsFile) {
             accounts = list
         }
         selectedID = UserDefaults.standard.string(forKey: selectedKey).flatMap(UUID.init(uuidString:))
@@ -79,8 +78,6 @@ final class AccountStore: ObservableObject {
     }
 
     private func save() {
-        if let data = try? JSONEncoder().encode(accounts) {
-            UserDefaults.standard.set(data, forKey: listKey)
-        }
+        JSONStorage.save(accounts, to: SileniumPaths.accountsFile)
     }
 }

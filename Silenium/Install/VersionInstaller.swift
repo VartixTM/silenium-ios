@@ -82,10 +82,11 @@ struct AssetIndex: Decodable {
 // MARK: - paths
 
 enum SileniumPaths {
+    /// Documents самого приложения: в Files это папка «Silenium» (UIFileSharingEnabled),
+    /// там видны accounts, instances, versions, libraries, assets, natives.
     static let base: URL = {
         let dir = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Silenium", isDirectory: true)
+            .urls(for: .documentDirectory, in: .userDomainMask)[0]
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }()
@@ -93,6 +94,8 @@ enum SileniumPaths {
     static var versions: URL { base.appendingPathComponent("versions", isDirectory: true) }
     static var libraries: URL { base.appendingPathComponent("libraries", isDirectory: true) }
     static var assets: URL { base.appendingPathComponent("assets", isDirectory: true) }
+    static var accountsFile: URL { base.appendingPathComponent("accounts/accounts.json") }
+    static var instancesFile: URL { base.appendingPathComponent("instances/instances.json") }
 
     /// нативы на версию: разные версии lwjgl не должны мешать друг другу
     static func natives(for versionID: String) -> URL {
@@ -123,6 +126,23 @@ enum NativesExtractor {
                 try fm.moveItem(at: item, to: target)
             }
             try? fm.removeItem(at: tmp)
+        }
+    }
+}
+
+// MARK: - json в файлах (видны в Files)
+
+enum JSONStorage {
+    static func load<T: Decodable>(_ type: T.Type, from url: URL) -> T? {
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        return try? JSONDecoder().decode(type, from: data)
+    }
+
+    static func save<T: Encodable>(_ value: T, to url: URL) {
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
+                                                 withIntermediateDirectories: true)
+        if let data = try? JSONEncoder().encode(value) {
+            try? data.write(to: url, options: .atomic)
         }
     }
 }
