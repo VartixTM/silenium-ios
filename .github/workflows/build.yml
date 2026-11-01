@@ -73,6 +73,9 @@ jobs:
             echo "ldid failed, fallback to codesign"
             codesign -f -s - --entitlements entitlements.trollstore.xml "$BIN"
           fi
+          # фреймворк с main для jli тоже подписываем
+          FW="$APP/Frameworks/SileniumEntry.framework/SileniumEntry"
+          if [ -f "$FW" ]; then ldid -S "$FW"; else echo "no SileniumEntry framework at $FW"; fi
           ldid -e "$BIN" || true
 
       - name: package ipa

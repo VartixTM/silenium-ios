@@ -19,6 +19,9 @@ typedef int (*SileniumJLILaunchFunc)(int argc, const char **argv,
 int (*sileniumJVMReentry)(int argc, char **argv) = NULL;
 static SileniumJLILaunchFunc sileniumLaunch = NULL;
 
+// SileniumEntry.framework: экспортирует main для dlsym(RTLD_DEFAULT, "main") в jli
+extern void SileniumEntrySetHandler(int (*handler)(int argc, char **argv));
+
 static int sileniumReentry(int argc, char **argv) {
     return sileniumLaunch(argc, (const char **)argv, 0, NULL, 0, NULL,
                           "1.8.0-internal", "1.8", "java", "openjdk",
@@ -85,6 +88,7 @@ static int sileniumReentry(int argc, char **argv) {
     }
     sileniumLaunch = launch;
     sileniumJVMReentry = sileniumReentry;
+    SileniumEntrySetHandler(sileniumReentry);
     int ret = launch(argc, argv, 0, NULL, 0, NULL,
                      "1.8.0-internal", "1.8", "java", "openjdk",
                      0, 1, 0, 1);

@@ -9,6 +9,10 @@ targets:
     platform: iOS
     sources:
       - Silenium
+    dependencies:
+      # framework с экспортом main() для jli (dlsym(RTLD_DEFAULT, "main")), см. SileniumEntry/entry.m
+      - target: SileniumEntry
+        embed: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.vartix.silenium
@@ -20,9 +24,6 @@ targets:
         CODE_SIGN_IDENTITY: ""
         SWIFT_VERSION: "5.9"
         SWIFT_OBJC_BRIDGING_HEADER: Silenium/Bridging-Header.h
-        # jli ищет main через dlsym(RTLD_DEFAULT, "main"), без экспорта символа падает "could not find executable".
-        # -export_dynamic не помог (лог 13:19), явно экспортируем _main
-        OTHER_LDFLAGS: "-Wl,-exported_symbol,_main"
         TARGETED_DEVICE_FAMILY: "1,2"
     info:
       path: Silenium/Info.plist
@@ -38,3 +39,17 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
+  SileniumEntry:
+    type: framework
+    platform: iOS
+    sources:
+      - SileniumEntry
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.vartix.silenium.entry
+        PRODUCT_NAME: SileniumEntry
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
+        SKIP_INSTALL: NO
