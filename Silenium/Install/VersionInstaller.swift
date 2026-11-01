@@ -1,5 +1,6 @@
 import Foundation
 import CryptoKit
+import ZIPFoundation
 
 // MARK: - version json (piston-meta)
 
@@ -23,10 +24,19 @@ struct VersionMeta: Decodable {
     struct Library: Decodable {
         struct Downloads: Decodable {
             let artifact: Artifact?
+            let classifiers: [String: Artifact]?
         }
         let name: String
         let downloads: Downloads?
         let rules: [Rule]?
+        /// os -> classifier, например "osx": "natives-osx"
+        let natives: [String: String]?
+
+        /// classifier с нативами для mac (natives-osx / natives-macos), nil если у библиотеки нет нативов
+        var macNativesClassifier: String? {
+            guard let natives else { return nil }
+            return (natives["osx"] ?? natives["macos"])?.replacingOccurrences(of: "${arch}", with: "64")
+        }
 
         /// эмулируем mac: правила без os и с os=osx применяем, linux/windows — нет
         var isAllowed: Bool {
@@ -83,6 +93,26 @@ enum SileniumPaths {
     static var versions: URL { base.appendingPathComponent("versions", isDirectory: true) }
     static var libraries: URL { base.appendingPathComponent("libraries", isDirectory: true) }
     static var assets: URL { base.appendingPathComponent("assets", isDirectory: true) }
+
+    /// нативы на версию: разные версии lwjgl не должны мешать друг другу
+    static func natives(for versionID: String) -> URL {
+        versions.appendingPathComponent("\(versionID)/natives", isDirectory: true)
+    }
+}
+
+// MARK: - natives
+
+enum NativesExtractor {
+    /// распаковывает natives-jar в папку версии, META-INF не нужен
+    static func extract(jars: [URL], to dir: URL) throws {
+        let fm = FileManager.default
+        try? fm.removeItem(at: dir)
+        try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        for jar in jars {
+            try fm.unzipItem(at: jar, to: dir)
+        }
+        try? fm.removeItem(at: dir.appendingPathComponent("META-INF", isDirectory: true))
+    }
 }
 
 // MARK: - downloader
@@ -154,6 +184,22 @@ final class VersionInstaller: ObservableObject {
                 return (art.url, SileniumPaths.libraries.appendingPathComponent(path), art.sha1)
             }
         try await downloadAll(libs)
+
+        // нативы (liblwjgl.dylib и прочее) лежат в отдельных classifier-jar, их надо скачать и распаковать
+        status = "нативы"
+        let nativeJars: [(URL, URL, String?)] = meta.libraries
+            .filter { $0.isAllowed }
+            .compactMap { lib -> (URL, URL, String?)? in
+                guard let key = lib.macNativesClassifier,
+                      let art = lib.downloads?.classifiers?[key],
+                      let path = art.path else { return nil }
+                return (art.url, SileniumPaths.libraries.appendingPathComponent(path), art.sha1)
+            }
+        try await downloadAll(nativeJars)
+        try NativesExtractor.extract(
+            jars: nativeJars.map { $0.1 },
+            to: SileniumPaths.natives(for: meta.id)
+        )
 
         status = "ассеты"
         let indexFile = SileniumPaths.assets

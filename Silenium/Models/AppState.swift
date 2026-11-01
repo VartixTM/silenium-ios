@@ -50,7 +50,7 @@ final class InstanceStore: ObservableObject {
         let name = loader == .vanilla ? versionID : "\(versionID) \(loader.rawValue)"
         let inst = Instance(id: UUID(), name: name, versionID: versionID, loader: loader, fabricAPI: fabricAPI)
         let dir = Self.gameDir(for: inst)
-        for sub in ["mods", "saves", "resourcepacks", "datapacks", "config"] {
+        for sub in ["mods", "saves", "resourcepacks", "datapacks", "config", "logs"] {
             try FileManager.default.createDirectory(
                 at: dir.appendingPathComponent(sub, isDirectory: true),
                 withIntermediateDirectories: true

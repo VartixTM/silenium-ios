@@ -16,7 +16,7 @@ enum LaunchCommand {
         args += [
             "-Xms128M",
             "-Xmx\(render.ramMB)M",
-            "-Djava.library.path=\(SileniumPaths.base.appendingPathComponent("natives").path)",
+            "-Djava.library.path=\(SileniumPaths.natives(for: meta.id).path)",
             "-Duser.dir=\(gameDir)",
             "-Duser.home=\(SileniumPaths.base.path)",
             "-Dorg.lwjgl.glfw.checkThread0=false",

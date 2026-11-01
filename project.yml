@@ -3,6 +3,10 @@ options:
   bundleIdPrefix: com.vartix
   deploymentTarget:
     iOS: "15.0"
+packages:
+  ZIPFoundation:
+    url: https://github.com/weichsel/ZIPFoundation.git
+    from: 0.9.19
 targets:
   Silenium:
     type: application
@@ -13,6 +17,7 @@ targets:
       # framework с экспортом main() для jli (dlsym(RTLD_DEFAULT, "main")), см. SileniumEntry/entry.m
       - target: SileniumEntry
         embed: true
+      - package: ZIPFoundation
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.vartix.silenium
